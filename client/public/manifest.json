@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Subscription Manager",
+  "version": "1.0",
+  "description": "Manage subscriptions and access your Gmail inbox.",
+  "permissions": ["identity", "storage", "scripting"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "oauth2": {
+    "client_id": "YOUR_CLIENT_ID.apps.googleusercontent.com",
+    "scopes": ["https://www.googleapis.com/auth/gmail.readonly"]
+  },
+  "action": {
+    "default_popup": "index.html"
+  }
+}
