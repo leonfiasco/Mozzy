@@ -3,14 +3,12 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import CustomError from "../errors/CustomError";
 import { IUser } from "../types";
 import { Model } from "mongoose";
-import { AuthenticatedRequest } from "../types";
 
 const protect =
   (model: Model<IUser>) =>
-  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     let token;
 
-    // Access 'authorization' header safely
     const authorization = req.headers.authorization;
 
     if (authorization && authorization.startsWith("Bearer")) {

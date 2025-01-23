@@ -1,110 +1,69 @@
-import { Request, Response, NextFunction } from "express";
-import { AuthenticatedRequest } from "../types";
+import { Response, NextFunction } from "express";
+import { AuthenticatedRequest } from "../types/custom";
 import Subscription from "../models/subscription";
 
-// Add a new subscription
 export const addSubscription = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-) => {
+): Promise<Response> => {
   try {
-    if (!req?.user) {
-      return res.status(401).json({ message: "User not authenticated" });
+    const { user } = req;
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const userId = req.user.id;
-
-    const {
-      subscriptionName,
-      price,
-      currency,
-      billingFrequency,
-      dateOfExpiry,
-      renewalReminder,
-      reminderDaysBefore,
-      category,
-      notes,
-    } = req.body;
-
-    if (
-      !subscriptionName ||
-      !price ||
-      !currency ||
-      !billingFrequency ||
-      !dateOfExpiry
-    ) {
-      return res.status(400).json({
-        message: "Please provide all required fields",
-      });
-    }
-
-    console.log("🔥🇬🇭", userId);
-
-    const newSubscription = new Subscription({
-      subscriptionName,
-      price,
-      currency,
-      billingFrequency,
-      dateOfExpiry,
-      renewalReminder: renewalReminder ?? true,
-      reminderDaysBefore: reminderDaysBefore ?? 7,
-      category: category || "general",
-      notes,
-      user: userId,
+    const subscription = await Subscription.create({
+      userId: user._id,
+      ...req.body,
     });
 
-    const savedSubscription = await newSubscription.save();
-
-    res.status(201).json({
-      message: "Subscription created successfully",
-      data: savedSubscription,
-    });
+    return res.status(201).json(subscription);
   } catch (error) {
     next(error);
   }
 };
 
-// Edit an existing subscription
 export const editSubscription = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-) => {
+): Promise<Response> => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const { user } = req;
 
-    const updatedSubscription = await Subscription.findByIdAndUpdate(
-      id,
-      updates,
-      {
-        new: true,
-        runValidators: true,
-      }
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const updatedSubscription = await Subscription.findOneAndUpdate(
+      { _id: id, userId: user._id },
+      req.body,
+      { new: true }
     );
 
     if (!updatedSubscription) {
       return res.status(404).json({ message: "Subscription not found" });
     }
 
-    res.status(200).json({
-      message: "Subscription updated successfully",
-      data: updatedSubscription,
-    });
+    return res.status(200).json(updatedSubscription);
   } catch (error) {
     next(error);
   }
 };
 
-// Delete a subscription
 export const deleteSubscription = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-) => {
+): Promise<Response<any>> => {
   try {
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid subscription ID" });
+    }
 
     const deletedSubscription = await Subscription.findByIdAndDelete(id);
 
@@ -112,47 +71,40 @@ export const deleteSubscription = async (
       return res.status(404).json({ message: "Subscription not found" });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
+      success: true,
       message: "Subscription deleted successfully",
       data: deletedSubscription,
     });
   } catch (error) {
+    console.error("Error deleting subscription:", error);
     next(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-// Get all subscriptions
-export const get_aSubscription = async (
-  req: Request,
+export const getUserSubscriptions = async (
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-) => {
+): Promise<Response<any>> => {
   try {
-    const subscriptions = await Subscription.find(); // Fetch all subscriptions
-    res.status(200).json({
+    if (!req?.user) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    const userId = req.user?.id;
+
+    const subscriptions = await Subscription.find({ user: userId });
+
+    return res.status(200).json({
+      success: true,
       message: "Subscriptions retrieved successfully",
       data: subscriptions,
     });
   } catch (error) {
+    console.error("Error retrieving subscriptions:", error);
     next(error);
-  }
-};
-
-export const get_userSubscriptions = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    // const userId = req.user.id; // Extract user ID from the authenticated request
-
-    // const subscriptions = await Subscription.find({ user: userId });
-
-    res.status(200).json({
-      message: "Subscriptions retrieved successfully",
-      // data: subscriptions,
-    });
-  } catch (error) {
-    next(error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };

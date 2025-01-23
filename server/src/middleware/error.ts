@@ -1,28 +1,26 @@
-import { Response, Request, NextFunction } from "express";
-import CustomError from "../errors/CustomError";
-import { ValidationError } from "joi";
+import { RequestHandler, ErrorRequestHandler } from "express";
 
-const errorHandler = (
-  error: ValidationError | CustomError,
-  _req: Request,
-  res: Response,
-  _next: NextFunction
-) => {
-  if (error.name === "ValidationError" && "details" in error) {
-    return res.status(403).json({
+// Specify that it's an error handling middleware
+const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
+  if (err.name === "ValidationError" && "details" in err) {
+    res.status(403).json({
       type: "ValidationError",
-      details: error.details,
+      details: err.details,
     });
+    return; // Early exit after responding
   }
 
-  if (error.name === "Error") {
-    return res.status(error.statusCode).json({
-      message: error.message,
-      statusCode: error.statusCode,
+  if (err.name === "Error") {
+    res.status(err.statusCode).json({
+      message: err.message,
+      statusCode: err.statusCode,
     });
+    return; // Early exit after responding
   }
+
+  // Default error response
   res.status(500).json({
-    errorMsg: error,
+    errorMsg: err,
     error: "Something went wrong!",
   });
 };

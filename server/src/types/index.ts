@@ -29,7 +29,20 @@ export interface ISubscription extends Document {
   updatedAt: Date; // Last updated date
 }
 
-export interface IUser extends Document {
+// Extend Express Request to include user property
+declare global {
+  namespace Express {
+    interface Request {
+      headers: {
+        authorization?: string;
+        [key: string]: string | undefined; // Allow other header keys
+      };
+    }
+  }
+}
+
+// Define the IUser interface
+export interface IUser extends mongoose.Document {
   _id: mongoose.Types.ObjectId;
   firstName: string;
   lastName: string;
@@ -38,6 +51,7 @@ export interface IUser extends Document {
   verified: boolean;
   resetToken?: string;
   resetTokenExpiration?: Date | number | null;
+  accessToken?: string;
 }
 
 interface IMongooseValidatorError {

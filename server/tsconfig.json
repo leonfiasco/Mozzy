@@ -7,9 +7,10 @@
     "sourceMap": true,
     "noImplicitAny": true,
     "esModuleInterop": true,
+    "strict": true, // Make sure strict mode is enabled
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "src/types/**/*.d.ts"],
+  "include": ["src/**/*.ts", "src/**/*", "src/types/**/*.d.ts"],
   "exclude": ["node_modules"]
 }
